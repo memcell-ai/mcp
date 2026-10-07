@@ -1,0 +1,14 @@
+{
+  "name": "@memcell/mcp",
+  "version": "0.10.12",
+  "description": "Official MemCell Model Context Protocol (MCP) server & registry manifest",
+  "homepage": "https://memcell.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/memcell-ai/mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/memcell-ai/mcp/issues"
+  },
+  "license": "Apache-2.0"
+}

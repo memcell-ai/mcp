@@ -1,0 +1,9 @@
+# Smithery configuration for MemCell MCP Server
+startCommand:
+  type: stdio
+  config:
+    command: npx
+    args:
+      - -y
+      - memcell
+      - mcp

@@ -36,6 +36,18 @@ Connect directly to the hosted or self-hosted MemCell streamable HTTP endpoint:
 - **Endpoint**: `https://memcell.ai/mcp`
 - **Header**: `Authorization: Bearer <agent-key>`
 
+### Option C: Air-Gapped Local Server (PGlite)
+
+Run MemCell entirely offline on your local machine with embedded PGlite vector storage:
+
+```bash
+# 1. Start local server in background
+memcell start --daemon
+
+# 2. Wire local MCP tools
+memcell connect --url http://localhost:3000
+```
+
 ---
 
 ## Client Configurations

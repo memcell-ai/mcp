@@ -15,7 +15,7 @@
   <a href="https://smithery.ai/server/@memcell/mcp"><img src="https://smithery.ai/badge/@memcell/mcp" alt="Smithery" /></a>
 </p>
 
-MemCell provides persistent, adaptive cognitive memory for AI agents across any client harness. This repository contains the official MCP registry manifest, Smithery configuration, and connection guides.
+MemCell provides persistent, adaptive memory, working thread continuity, knowledge graph traversal, and grounded document RAG for AI agents across any client harness. This repository contains the official MCP registry manifest, Smithery configuration, and connection guides.
 
 ---
 
@@ -115,10 +115,10 @@ Configure the MCP server command as:
 
 ## How It Works
 
-MemCell exposes three core cognitive memory tools over MCP:
+MemCell exposes three core memory tools over MCP:
 
-1. **`recall`**: Pre-flight memory retrieval before taking action. Fetches relevant memories, established principles, and active operational scopes.
-2. **`remember`**: Durable memory storage. Files atomic facts, directives, and observations directly into the active workspace.
+1. **`recall`**: Pre-flight memory retrieval before taking action. Fetches relevant instructions, decisions, facts, preferences (complete with detailed operational specifications and resource anchors), active or resumed session threads (with cumulative milestones and chronological tool activity trails), 1-hop knowledge graph relations, and grounded workspace document chunks.
+2. **`remember`**: Durable memory storage. Files atomic instructions, decisions, facts, and preferences—including detailed operational specifications (`content`), affected resources (`resources`), and enforcement moments (`appliesAt`)—directly into the active workspace or user profile.
 3. **`report`**: Outcome feedback calibration. Reports whether recalled memory worked, failed, or was avoided, calibrating confidence dynamically over time.
 
 ---

@@ -36,9 +36,9 @@ Connect directly to the hosted or self-hosted MemCell streamable HTTP endpoint:
 - **Endpoint**: `https://memcell.ai/mcp`
 - **Header**: `Authorization: Bearer <agent-key>`
 
-### Option C: Air-Gapped Local Server (PGlite)
+### Option C: Local Standalone Server (PGlite)
 
-Run MemCell entirely offline on your local machine with embedded PGlite vector storage:
+Run MemCell on your local machine with embedded PGlite vector storage (once cached or pointed at `MEMCELL_SERVER_PATH`, `memcell start` runs completely offline without network access):
 
 ```bash
 # 1. Start local server in background
@@ -115,11 +115,21 @@ Configure the MCP server command as:
 
 ## How It Works
 
-MemCell exposes three core memory tools over MCP:
+MemCell exposes seven workspace tools over MCP:
 
-1. **`recall`**: Pre-flight memory retrieval before taking action. Fetches relevant instructions, decisions, facts, preferences (complete with detailed operational specifications and resource anchors), active or resumed session threads (with cumulative milestones and chronological tool activity trails), 1-hop knowledge graph relations, and grounded workspace document chunks.
+1. **`recall`**: Pre-flight memory retrieval before taking action. Fetches relevant instructions, decisions, facts, preferences, active or resumed session threads, 1-hop knowledge graph relations, and grounded workspace document chunks.
 2. **`remember`**: Durable memory storage. Files atomic instructions, decisions, facts, and preferences—including detailed operational specifications (`content`), affected resources (`resources`), and enforcement moments (`appliesAt`)—directly into the active workspace or user profile.
 3. **`report`**: Outcome feedback calibration. Reports whether recalled memory worked, failed, or was avoided, calibrating confidence dynamically over time.
+4. **`feedback`**: Direct evaluation of a specific memory ID (`worked` or `failed`) with supporting outcome notes.
+5. **`ingest_document`**: Multi-format document ingestion. Indexes PDF, DOCX, CSV, TSV, HTML, JSON, and Markdown documents into grounded workspace chunks and optionally distills atomic memories.
+6. **`search_documents`**: Hybrid semantic and full-text retrieval across grounded workspace document chunks.
+7. **`get_insights`**: Live workspace telemetry, empirical Confidence Calibration Curve (`ECE`, Brier score, and bucketed observed success rates), and Governance Shield metrics (enforced guards, quarantined user-scope memories, and demoted items).
+
+---
+
+## Custom Agent SDK Integrations
+
+Building custom agents in TypeScript or Python? Official drop-in adapters ship inside `@memcell/sdk` (`@memcell/sdk/vercel`, `@memcell/sdk/openai`, `@memcell/sdk/langgraph`) and Python `memcell.integrations` (OpenAI Agents, LangGraph, PydanticAI, CrewAI) alongside MCP.
 
 ---
 

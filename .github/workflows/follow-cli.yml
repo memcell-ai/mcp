@@ -1,0 +1,98 @@
+# The plugin pin, server.json and the MCP Registry follow the published CLI.
+#
+# Each half checks its own state, so a run that stops halfway is finished by
+# the next one. The schedule is what makes that work without a token reaching
+# across from devkit. GitHub pauses schedules on a public repo after 60 days
+# without activity, and workflow_dispatch runs this by hand.
+#
+# ai.memcell/* is a domain namespace, so the registry takes a key rather than
+# GitHub's OIDC. The matching public key is the MCPv1 TXT record on memcell.ai.
+
+name: follow-cli
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: follow-cli
+  cancel-in-progress: false
+
+env:
+  PUBLISHER_VERSION: 1.8.7
+  PUBLISHER_SHA256: 00b21004149a4ce66f0782508ae4a2bce67d1bea395a8da0bd8028159fb59579
+
+jobs:
+  follow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: where each one stands
+        id: state
+        run: |
+          set -euo pipefail
+          {
+            echo "cli=$(npm view memcell version)"
+            echo "pinned=$(node -p "require('./server.json').version")"
+            echo "listed=$(curl -fsS "https://registry.modelcontextprotocol.io/v0/servers/ai.memcell%2Fmemcell/versions/latest" | jq -r .server.version)"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: install mcp-publisher
+        if: steps.state.outputs.pinned != steps.state.outputs.cli || steps.state.outputs.listed != steps.state.outputs.cli
+        run: |
+          set -euo pipefail
+          tarball=mcp-publisher_linux_amd64.tar.gz
+          curl -fsSL -o "$RUNNER_TEMP/$tarball" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v${PUBLISHER_VERSION}/${tarball}"
+          echo "${PUBLISHER_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum --check --status
+          tar xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" mcp-publisher
+
+      - name: raise the pin
+        if: steps.state.outputs.pinned != steps.state.outputs.cli
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PINNED: ${{ steps.state.outputs.pinned }}
+          CLI: ${{ steps.state.outputs.cli }}
+        run: |
+          set -euo pipefail
+          node scripts/pin-cli.mjs "$PINNED" "$CLI"
+          "$RUNNER_TEMP/mcp-publisher" validate
+          branch="chore/pin-cli-$CLI"
+          title="chore(plugin): pin memcell@$CLI after the CLI release"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add server.json plugins/memcell
+          git commit -m "$title"
+          git push -u origin "$branch"
+          gh pr create --base main --head "$branch" --title "$title" \
+            --body "Raises the plugin's \`npx\` pin, the plugin version and the \`server.json\` versions to the published CLI $CLI."
+          gh pr merge "$branch" --squash --delete-branch
+
+      - name: publish to the MCP Registry
+        if: steps.state.outputs.listed != steps.state.outputs.cli
+        env:
+          MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+          CLI: ${{ steps.state.outputs.cli }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MCP_REGISTRY_PRIVATE_KEY" ]; then
+            echo "::error::MCP_REGISTRY_PRIVATE_KEY is not set. It is the hex Ed25519 key behind the MCPv1 TXT record on memcell.ai. Add it under this repository's Actions secrets."
+            exit 1
+          fi
+          "$RUNNER_TEMP/mcp-publisher" login dns --domain memcell.ai --private-key "$MCP_REGISTRY_PRIVATE_KEY"
+          "$RUNNER_TEMP/mcp-publisher" publish
+          listed="$(curl -fsS "https://registry.modelcontextprotocol.io/v0/servers/ai.memcell%2Fmemcell/versions/latest" | jq -r .server.version)"
+          if [ "$listed" != "$CLI" ]; then
+            echo "::error::The registry lists $listed after publishing $CLI."
+            exit 1
+          fi
